@@ -161,10 +161,10 @@
             display: grid; gap: 10px;
         }
         .site-footer .footer-col-links {
-            display: flex; flex-direction: column; align-items: center;
+            display: flex; flex-direction: column; align-items: flex-start;
         }
         .site-footer .footer-col-links .footer-title,
-        .site-footer .footer-col-links .footer-links { width: max-content; }
+        .site-footer .footer-col-links .footer-links { width: auto; }
         .site-footer .footer-links a {
             color: rgba(212,212,212,.75);
             text-decoration: none;
@@ -190,11 +190,11 @@
             border-radius: 50%;
             border: 1px solid rgba(255,255,255,.18);
             display: inline-flex; align-items: center; justify-content: center;
-            color: #d4d4d4;
+            color: rgba(212,212,212,.85);
             text-decoration: none;
-            font-size: .78rem; font-weight: 600;
-            transition: background 160ms ease, border-color 160ms ease, transform 160ms ease;
+            transition: background 160ms ease, border-color 160ms ease, transform 160ms ease, color 160ms ease;
         }
+        .site-footer .social-item svg { width: 17px; height: 17px; fill: currentColor; }
         .site-footer .social-item:hover {
             background: rgba(255,255,255,.1);
             border-color: rgba(255,255,255,.5);
@@ -281,10 +281,18 @@
                 <div class="footer-brand">{{ $footerContent['brand'] ?? 'UPFotoStudio' }}</div>
                 <p class="footer-text mb-0">{{ $footerContent['description'] ?? '' }}</p>
                 <div class="social-list">
-                    <a class="social-item" href="#" aria-label="Instagram">Ig</a>
-                    <a class="social-item" href="#" aria-label="TikTok">Tk</a>
-                    <a class="social-item" href="#" aria-label="WhatsApp">Wa</a>
-                    <a class="social-item" href="#" aria-label="Facebook">Fb</a>
+                    <a class="social-item" href="#" aria-label="Instagram">
+                        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2.16c3.2 0 3.58.01 4.85.07 1.17.05 1.8.25 2.23.41.56.22.96.48 1.38.9.42.42.68.82.9 1.38.16.42.36 1.06.41 2.23.06 1.27.07 1.65.07 4.85s-.01 3.58-.07 4.85c-.05 1.17-.25 1.8-.41 2.23-.22.56-.48.96-.9 1.38-.42.42-.82.68-1.38.9-.42.16-1.06.36-2.23.41-1.27.06-1.65.07-4.85.07s-3.58-.01-4.85-.07c-1.17-.05-1.8-.25-2.23-.41a3.7 3.7 0 01-1.38-.9 3.7 3.7 0 01-.9-1.38c-.16-.42-.36-1.06-.41-2.23C2.17 15.58 2.16 15.2 2.16 12s.01-3.58.07-4.85c.05-1.17.25-1.8.41-2.23.22-.56.48-.96.9-1.38.42-.42.82-.68 1.38-.9.42-.16 1.06-.36 2.23-.41C8.42 2.17 8.8 2.16 12 2.16zm0 1.62c-3.15 0-3.52.01-4.76.07-.9.04-1.39.19-1.71.32-.43.17-.74.37-1.06.69-.32.32-.52.63-.69 1.06-.13.32-.28.81-.32 1.71-.06 1.24-.07 1.61-.07 4.76s.01 3.52.07 4.76c.04.9.19 1.39.32 1.71.17.43.37.74.69 1.06.32.32.63.52 1.06.69.32.13.81.28 1.71.32 1.24.06 1.61.07 4.76.07s3.52-.01 4.76-.07c.9-.04 1.39-.19 1.71-.32.43-.17.74-.37 1.06-.69.32-.32.52-.63.69-1.06.13-.32.28-.81.32-1.71.06-1.24.07-1.61.07-4.76s-.01-3.52-.07-4.76c-.04-.9-.19-1.39-.32-1.71a2.85 2.85 0 00-.69-1.06 2.85 2.85 0 00-1.06-.69c-.32-.13-.81-.28-1.71-.32-1.24-.06-1.61-.07-4.76-.07zm0 2.76a5.3 5.3 0 110 10.6 5.3 5.3 0 010-10.6zm0 8.74a3.44 3.44 0 100-6.88 3.44 3.44 0 000 6.88zm6.74-8.94a1.24 1.24 0 11-2.48 0 1.24 1.24 0 012.48 0z"/></svg>
+                    </a>
+                    <a class="social-item" href="#" aria-label="TikTok">
+                        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M16.6 5.82a4.28 4.28 0 01-1.05-2.82h-3.1v12.5a2.54 2.54 0 01-2.54 2.45 2.52 2.52 0 01-2.52-2.52 2.52 2.52 0 012.52-2.52c.26 0 .52.04.76.12v-3.16a5.7 5.7 0 00-.76-.05A5.66 5.66 0 003.8 15.43a5.66 5.66 0 005.66 5.66 5.66 5.66 0 005.66-5.66V9.01a7.32 7.32 0 004.27 1.37V7.27a4.28 4.28 0 01-2.79-1.45z"/></svg>
+                    </a>
+                    <a class="social-item" href="#" aria-label="WhatsApp">
+                        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12.04 2C6.58 2 2.13 6.45 2.13 11.91c0 1.75.46 3.45 1.32 4.95L2 22l5.25-1.38a9.9 9.9 0 004.79 1.22h.01c5.46 0 9.91-4.45 9.91-9.91 0-2.65-1.03-5.14-2.9-7.01A9.82 9.82 0 0012.04 2zm0 1.82c2.17 0 4.21.84 5.74 2.38a8.06 8.06 0 012.38 5.73c0 4.54-3.7 8.23-8.24 8.23-1.48 0-2.93-.4-4.2-1.15l-.3-.18-3.12.82.83-3.04-.2-.31a8.18 8.18 0 01-1.26-4.37c0-4.54 3.69-8.23 8.23-8.23zm-4.5 4.43c-.21 0-.55.08-.84.39-.29.31-1.1 1.08-1.1 2.63s1.13 3.05 1.29 3.26c.16.21 2.22 3.39 5.38 4.62.75.29 1.33.46 1.79.59.75.24 1.43.2 1.97.12.6-.09 1.85-.76 2.11-1.49.26-.73.26-1.36.18-1.49-.08-.13-.29-.21-.6-.37-.31-.16-1.85-.91-2.13-1.02-.29-.1-.5-.16-.71.16-.21.31-.81 1.02-1 1.23-.18.21-.37.24-.68.08-.31-.16-1.32-.49-2.51-1.55-.93-.83-1.55-1.85-1.74-2.16-.18-.31-.02-.48.14-.63.14-.14.31-.37.47-.55.16-.18.21-.31.31-.52.1-.21.05-.39-.03-.55-.08-.16-.7-1.7-.97-2.33-.25-.6-.51-.52-.71-.53-.18-.01-.39-.01-.6-.01z"/></svg>
+                    </a>
+                    <a class="social-item" href="#" aria-label="Facebook">
+                        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M22 12.06C22 6.5 17.52 2 12 2S2 6.5 2 12.06c0 5.02 3.66 9.18 8.44 9.94v-7.03H7.9v-2.91h2.54V9.85c0-2.51 1.49-3.9 3.78-3.9 1.09 0 2.24.2 2.24.2v2.46h-1.26c-1.24 0-1.63.78-1.63 1.57v1.88h2.78l-.44 2.91h-2.34V22c4.78-.76 8.44-4.92 8.44-9.94z"/></svg>
+                    </a>
                 </div>
             </div>
             <div class="col-lg-4 footer-col-links">
