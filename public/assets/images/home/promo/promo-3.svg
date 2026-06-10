@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1400" height="640" viewBox="0 0 1400 640">
+  <defs>
+    <linearGradient id="bg3" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#dbeafe"/>
+      <stop offset="100%" stop-color="#f0fdf4"/>
+    </linearGradient>
+  </defs>
+  <rect width="1400" height="640" fill="url(#bg3)"/>
+  <rect x="120" y="110" width="530" height="200" rx="20" fill="#ffffff"/>
+  <rect x="120" y="340" width="530" height="200" rx="20" fill="#ffffff"/>
+  <rect x="700" y="110" width="580" height="430" rx="20" fill="#ffffff"/>
+  <text x="160" y="190" fill="#111827" font-size="56" font-family="Arial" font-weight="800">EXPLORE MOMENTS</text>
+  <text x="160" y="250" fill="#334155" font-size="34" font-family="Arial">pilih tipe sesi favoritmu</text>
+  <text x="160" y="430" fill="#1d4ed8" font-size="48" font-family="Arial" font-weight="800">COUPLE - GROUP</text>
+  <text x="160" y="490" fill="#1d4ed8" font-size="48" font-family="Arial" font-weight="800">SOLO - ID PHOTO</text>
+  <text x="760" y="210" fill="#0f172a" font-size="64" font-family="Arial" font-weight="900">PROMO BUNDLING</text>
+  <text x="760" y="290" fill="#475569" font-size="36" font-family="Arial">2 sesi foto + 1 print album mini</text>
+  <text x="760" y="360" fill="#475569" font-size="36" font-family="Arial">Bonus file digital resolusi tinggi</text>
+  <rect x="760" y="420" width="360" height="86" rx="14" fill="#2563eb"/>
+  <text x="835" y="475" fill="#ffffff" font-size="40" font-family="Arial" font-weight="700">LIHAT DETAIL</text>
+</svg>

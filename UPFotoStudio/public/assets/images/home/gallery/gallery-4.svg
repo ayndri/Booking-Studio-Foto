@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="900" height="700" viewBox="0 0 900 700">
+  <defs><linearGradient id="g4" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#c7d2fe"/><stop offset="100%" stop-color="#a5b4fc"/></linearGradient></defs>
+  <rect width="900" height="700" fill="url(#g4)"/>
+  <text x="60" y="90" fill="#312e81" font-size="58" font-family="Arial" font-weight="800">Gallery 04</text>
+  <circle cx="300" cy="360" r="190" fill="#fff" opacity="0.55"/>
+  <circle cx="610" cy="360" r="140" fill="#fff" opacity="0.45"/>
+</svg>

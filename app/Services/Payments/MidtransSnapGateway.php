@@ -1,0 +1,134 @@
+<?php
+
+namespace App\Services\Payments;
+
+use App\Contracts\Payments\PaymentGatewayInterface;
+use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Log;
+use RuntimeException;
+
+/**
+ * Integrasi Midtrans Snap (hosted payment page).
+ *
+ * Memakai HTTP client bawaan Laravel agar tidak perlu menambah dependency SDK.
+ * Mendukung QRIS + seluruh metode pembayaran yang aktif di dashboard Midtrans.
+ */
+class MidtransSnapGateway implements PaymentGatewayInterface
+{
+    /**
+     * @param string $serverKey   Server Key Midtrans (sandbox/production).
+     * @param bool   $isProduction false = sandbox, true = production.
+     * @param int    $expiryMinutes Masa berlaku pembayaran sebelum kadaluarsa.
+     */
+    public function __construct(
+        private readonly string $serverKey,
+        private readonly bool $isProduction = false,
+        private readonly int $expiryMinutes = 30,
+    ) {
+    }
+
+    /**
+     * Buat transaksi Snap dan kembalikan URL halaman pembayaran Midtrans.
+     *
+     * @param array<string, mixed> $payload
+     * @return array<string, mixed>
+     */
+    public function createQrisPayment(array $payload): array
+    {
+        $invoiceNumber = (string) $payload['invoice_number'];
+        $amount = (int) $payload['amount'];
+
+        $body = [
+            'transaction_details' => [
+                'order_id' => $invoiceNumber,
+                'gross_amount' => $amount,
+            ],
+            'item_details' => [[
+                'id' => (string) ($payload['booking_code'] ?? $invoiceNumber),
+                'price' => $amount,
+                'quantity' => 1,
+                'name' => 'Booking UPFotoStudio',
+            ]],
+            'customer_details' => [
+                'first_name' => (string) ($payload['customer_name'] ?? 'Tamu'),
+                'email' => (string) ($payload['customer_email'] ?? ''),
+                'phone' => (string) ($payload['customer_phone'] ?? ''),
+            ],
+            'expiry' => [
+                'unit' => 'minute',
+                'duration' => $this->expiryMinutes,
+            ],
+            // Override Finish Redirect URL dari sisi request (tidak bergantung setting dashboard).
+            'callbacks' => [
+                'finish' => route('payment.finish'),
+            ],
+            // Batasi halaman Midtrans hanya ke QRIS agar konsisten dgn pilihan di form.
+            // Tambah kode lain (mis. 'gopay', 'shopeepay', 'bca_va') bila ingin metode lain.
+            'enabled_payments' => ['other_qris'],
+        ];
+
+        $response = Http::withBasicAuth($this->serverKey, '')
+            ->acceptJson()
+            ->asJson()
+            ->post($this->snapBaseUrl() . '/snap/v1/transactions', $body);
+
+        if ($response->failed()) {
+            Log::error('Midtrans Snap gagal membuat transaksi.', [
+                'invoice' => $invoiceNumber,
+                'status' => $response->status(),
+                'body' => $response->body(),
+            ]);
+
+            throw new RuntimeException('Gagal membuat transaksi Midtrans: ' . $response->body());
+        }
+
+        $data = $response->json();
+
+        return [
+            'reference' => $data['token'] ?? null,
+            'qr_string' => null, // Snap memakai halaman hosted, bukan QR mentah.
+            'payment_url' => $data['redirect_url'] ?? null,
+            'expires_at' => now()->addMinutes($this->expiryMinutes),
+        ];
+    }
+
+    /**
+     * Ambil status transaksi terbaru dari Midtrans (Status API).
+     * Dipakai saat customer kembali dari halaman pembayaran (finish redirect),
+     * agar status tetap sinkron meski webhook belum sampai (mis. di localhost).
+     *
+     * @return array<string, mixed>
+     */
+    public function getStatus(string $orderId): array
+    {
+        $response = Http::withBasicAuth($this->serverKey, '')
+            ->acceptJson()
+            ->get($this->apiBaseUrl() . "/v2/{$orderId}/status");
+
+        if ($response->failed()) {
+            Log::warning('Midtrans Status API gagal.', [
+                'order_id' => $orderId,
+                'status' => $response->status(),
+                'body' => $response->body(),
+            ]);
+
+            return [];
+        }
+
+        return (array) $response->json();
+    }
+
+    private function snapBaseUrl(): string
+    {
+        return $this->isProduction
+            ? 'https://app.midtrans.com'
+            : 'https://app.sandbox.midtrans.com';
+    }
+
+    private function apiBaseUrl(): string
+    {
+        return $this->isProduction
+            ? 'https://api.midtrans.com'
+            : 'https://api.sandbox.midtrans.com';
+    }
+}
