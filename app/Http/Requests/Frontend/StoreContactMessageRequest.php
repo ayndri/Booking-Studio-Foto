@@ -2,6 +2,8 @@
 
 namespace App\Http\Requests\Frontend;
 
+use App\Services\Security\RecaptchaService;
+use Illuminate\Contracts\Validation\Validator;
 use Illuminate\Foundation\Http\FormRequest;
 
 class StoreContactMessageRequest extends FormRequest
@@ -39,5 +41,26 @@ class StoreContactMessageRequest extends FormRequest
             'subject' => trim((string) $this->input('subject')),
             'message' => trim((string) $this->input('message')),
         ]);
+    }
+
+    /**
+     * Verifikasi token reCAPTCHA setelah validasi field utama.
+     */
+    public function withValidator(Validator $validator): void
+    {
+        $validator->after(function (Validator $validator) {
+            $passed = app(RecaptchaService::class)->verify(
+                $this->input('recaptcha_token'),
+                'contact',
+                $this->ip()
+            );
+
+            if (!$passed) {
+                $validator->errors()->add(
+                    'recaptcha_token',
+                    'Verifikasi anti-bot gagal. Silakan muat ulang halaman lalu coba lagi.'
+                );
+            }
+        });
     }
 }

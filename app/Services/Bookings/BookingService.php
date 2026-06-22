@@ -97,6 +97,31 @@ class BookingService
                 ]);
             }
 
+            // Batasi jumlah booking belum dibayar (PENDING) yang aktif per email,
+            // untuk mencegah penumpukan slot oleh satu orang. Booking yang sudah
+            // kadaluarsa (expires_at lewat) tidak dihitung.
+            $maxPending = (int) config('services.booking.max_pending_per_email', 3);
+
+            if ($maxPending > 0) {
+                $activePending = Booking::query()
+                    ->where('status', Booking::STATUS_PENDING_PAYMENT)
+                    ->whereHas('guest', fn ($query) => $query->where('email', $payload['guest_email']))
+                    ->whereHas('paymentTransaction', function ($query) {
+                        $query->where('status', PaymentTransaction::STATUS_PENDING)
+                            ->where(function ($inner) {
+                                $inner->whereNull('expires_at')
+                                    ->orWhere('expires_at', '>', now());
+                            });
+                    })
+                    ->count();
+
+                if ($activePending >= $maxPending) {
+                    throw ValidationException::withMessages([
+                        'guest_email' => "Email ini sudah memiliki {$maxPending} booking yang menunggu pembayaran. Selesaikan pembayaran tersebut terlebih dahulu.",
+                    ]);
+                }
+            }
+
             $guest = Guest::firstOrCreate(
                 [
                     'email' => $payload['guest_email'],

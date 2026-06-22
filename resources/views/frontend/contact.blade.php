@@ -273,8 +273,9 @@
                     <h2 class="ctc-form-title">Kirim Pesan</h2>
                     <p class="ctc-form-sub">Pesan Anda akan langsung masuk ke dashboard admin kami.</p>
 
-                    <form method="post" action="{{ route('frontend.contact.store') }}" novalidate>
+                    <form method="post" action="{{ route('frontend.contact.store') }}" id="contactForm" novalidate>
                         @csrf
+                        <input type="hidden" name="recaptcha_token" id="contact_recaptcha_token">
 
                         <div class="ctc-row">
                             <div class="ctc-field">
@@ -330,6 +331,8 @@
                             @error('message')<p class="ctc-err">{{ $message }}</p>@enderror
                         </div>
 
+                        @error('recaptcha_token')<p class="ctc-err">{{ $message }}</p>@enderror
+
                         <button type="submit" class="ctc-submit">Kirim Pesan &rarr;</button>
                     </form>
                 </div>
@@ -341,3 +344,27 @@
 
 </div>
 @endsection
+
+@push('scripts')
+@if(config('services.recaptcha.site_key'))
+    <script src="https://www.google.com/recaptcha/api.js?render={{ config('services.recaptcha.site_key') }}"></script>
+    <script>
+        const contactForm = document.getElementById('contactForm');
+        const contactSiteKey = @json(config('services.recaptcha.site_key'));
+        let contactRecaptchaResolved = false;
+        if (contactForm && contactSiteKey) {
+            contactForm.addEventListener('submit', function (event) {
+                if (contactRecaptchaResolved) return;
+                event.preventDefault();
+                grecaptcha.ready(function () {
+                    grecaptcha.execute(contactSiteKey, { action: 'contact' }).then(function (token) {
+                        document.getElementById('contact_recaptcha_token').value = token;
+                        contactRecaptchaResolved = true;
+                        contactForm.submit();
+                    });
+                });
+            });
+        }
+    </script>
+@endif
+@endpush

@@ -50,4 +50,28 @@ return [
         'expiry_minutes' => (int) env('MIDTRANS_EXPIRY_MINUTES', 30),
     ],
 
+    /*
+    |--------------------------------------------------------------------------
+    | Google reCAPTCHA v3 (Invisible)
+    |--------------------------------------------------------------------------
+    | Proteksi anti-bot untuk form booking & kontak.
+    | Bila secret_key kosong, verifikasi otomatis dilewati (cocok untuk lokal).
+    */
+    'recaptcha' => [
+        'site_key' => env('RECAPTCHA_SITE_KEY'),
+        'secret_key' => env('RECAPTCHA_SECRET_KEY'),
+        // Skor minimum v3 (0.0 bot – 1.0 manusia) agar dianggap valid.
+        'min_score' => (float) env('RECAPTCHA_MIN_SCORE', 0.5),
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
+    | Kebijakan Booking
+    |--------------------------------------------------------------------------
+    */
+    'booking' => [
+        // Maksimal booking PENDING_PAYMENT (belum dibayar) yang aktif per email.
+        'max_pending_per_email' => (int) env('BOOKING_MAX_PENDING_PER_EMAIL', 3),
+    ],
+
 ];

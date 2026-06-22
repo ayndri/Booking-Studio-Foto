@@ -2,6 +2,8 @@
 
 namespace App\Http\Requests\Frontend;
 
+use App\Services\Security\RecaptchaService;
+use Illuminate\Contracts\Validation\Validator;
 use Illuminate\Foundation\Http\FormRequest;
 
 class StoreBookingRequest extends FormRequest
@@ -29,7 +31,7 @@ class StoreBookingRequest extends FormRequest
             'service_package_id' => ['required', 'integer', 'exists:service_packages,id'],
             'booking_date' => ['required', 'date', 'after_or_equal:today'],
             'start_time' => ['required', 'date_format:H:i'],
-            'payment_type' => ['required', 'in:DP,LUNAS'],
+            'payment_type' => ['required', 'in:DP'],
             'payment_method' => ['required', 'in:QRIS'],
             'add_on_amount' => ['nullable', 'integer', 'min:0'],
             'add_ons' => ['nullable', 'array'],
@@ -47,5 +49,26 @@ class StoreBookingRequest extends FormRequest
             'payment_method' => strtoupper((string) $this->input('payment_method', 'QRIS')),
             'social_consent' => strtoupper((string) $this->input('social_consent')),
         ]);
+    }
+
+    /**
+     * Verifikasi token reCAPTCHA setelah validasi field utama.
+     */
+    public function withValidator(Validator $validator): void
+    {
+        $validator->after(function (Validator $validator) {
+            $passed = app(RecaptchaService::class)->verify(
+                $this->input('recaptcha_token'),
+                'booking',
+                $this->ip()
+            );
+
+            if (!$passed) {
+                $validator->errors()->add(
+                    'recaptcha_token',
+                    'Verifikasi anti-bot gagal. Silakan muat ulang halaman lalu coba lagi.'
+                );
+            }
+        });
     }
 }

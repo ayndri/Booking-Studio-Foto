@@ -30,12 +30,16 @@ Route::get('/paket-harga', [HomeController::class, 'pricing'])->name('frontend.p
 Route::get('/syarat-ketentuan', [HomeController::class, 'terms'])->name('frontend.terms');
 Route::get('/kontak', [HomeController::class, 'contact'])->name('frontend.contact');
 Route::get('/coming-soon', [HomeController::class, 'comingSoon'])->name('frontend.coming-soon');
-Route::post('/kontak', [ContactMessageController::class, 'store'])->name('frontend.contact.store');
+Route::post('/kontak', [ContactMessageController::class, 'store'])
+    ->middleware('throttle:5,1')
+    ->name('frontend.contact.store');
 
 Route::get('/booking', [BookingController::class, 'create'])->name('frontend.booking.create');
 Route::get('/booking/paket/{servicePackage}', [BookingController::class, 'packageDetail'])->name('frontend.booking.package-detail');
 Route::get('/booking/order', [BookingController::class, 'order'])->name('frontend.booking.order');
-Route::post('/booking', [BookingController::class, 'store'])->name('frontend.booking.store');
+Route::post('/booking', [BookingController::class, 'store'])
+    ->middleware('throttle:5,1')
+    ->name('frontend.booking.store');
 Route::get('/booking/status/{invoiceNumber}', [BookingController::class, 'status'])->name('frontend.booking.status');
 Route::get('/booking/invoice/{invoiceNumber}', [BookingController::class, 'invoice'])->name('frontend.booking.invoice');
 Route::get('/booking/studios/{studio}/packages', [BookingController::class, 'packagesByStudio'])

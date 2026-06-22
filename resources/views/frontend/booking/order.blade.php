@@ -165,6 +165,17 @@
         <input type="hidden" name="booking_date"       value="{{ $bookingDate }}">
         <input type="hidden" name="start_time"         value="{{ $startTime }}">
         <input type="hidden" name="add_on_amount" id="add_on_amount" value="0">
+        <input type="hidden" name="recaptcha_token" id="recaptcha_token">
+
+        @if($errors->any())
+            <div class="alert alert-danger" role="alert">
+                <ul class="mb-0 ps-3">
+                    @foreach($errors->all() as $error)
+                        <li>{{ $error }}</li>
+                    @endforeach
+                </ul>
+            </div>
+        @endif
 
         <div class="row g-4">
 
@@ -189,10 +200,9 @@
                         </div>
                         <div class="col-md-6">
                             <label class="bk-label" for="payment_type">Jenis Pembayaran</label>
-                            <select name="payment_type" id="payment_type" class="bk-select" required>
-                                <option value="LUNAS" @selected(old('payment_type','LUNAS')==='LUNAS')>LUNAS (100%)</option>
-                                <option value="DP"    @selected(old('payment_type')==='DP')>DP (30%)</option>
-                            </select>
+                            <input type="text" class="bk-input" value="DP (30%)" readonly tabindex="-1" aria-label="Jenis Pembayaran">
+                            <input type="hidden" name="payment_type" id="payment_type" value="DP">
+                            <small class="text-muted d-block mt-1">Pembayaran hanya DP 30%. Sisa pelunasan dibayar di studio saat sesi foto.</small>
                         </div>
                     </div>
                 </div>
@@ -294,7 +304,7 @@
                     </div>
                     <div class="sum-row">
                         <span>Jenis</span>
-                        <strong id="summary_payment_type_label">LUNAS</strong>
+                        <strong id="summary_payment_type_label">DP</strong>
                     </div>
                     <div class="sum-row">
                         <span style="max-width:60%;font-size:.82rem;">{{ $servicePackage->name }}</span>
@@ -310,8 +320,8 @@
                         <strong id="summary_order_total">Rp{{ number_format($servicePackage->price,0,',','.') }}</strong>
                     </div>
                     <div class="sum-row mt-1">
-                        <span style="font-size:.78rem;">Bayar Sekarang</span>
-                        <span class="sum-total" id="summary_pay_now">Rp{{ number_format($servicePackage->price,0,',','.') }}</span>
+                        <span style="font-size:.78rem;">Bayar Sekarang (DP 30%)</span>
+                        <span class="sum-total" id="summary_pay_now">Rp{{ number_format(round($servicePackage->price * 0.3),0,',','.') }}</span>
                     </div>
 
                     <ul class="sum-terms">
@@ -331,6 +341,9 @@
 @endsection
 
 @push('scripts')
+@if(config('services.recaptcha.site_key'))
+    <script src="https://www.google.com/recaptcha/api.js?render={{ config('services.recaptcha.site_key') }}"></script>
+@endif
 <script>
     const packagePrice = Number({{ $servicePackage->price }});
     const orderForm = document.getElementById('orderForm');
@@ -402,7 +415,6 @@
         plusBtn.addEventListener('click', () => setQty(Number(qtyInput.value) + 1));
     });
 
-    paymentTypeSelect.addEventListener('change', refreshSummary);
     document.querySelectorAll('input[name="payment_method"]').forEach((input) => {
         input.addEventListener('change', refreshSummary);
     });
@@ -414,5 +426,22 @@
         });
     }
     refreshSummary();
+
+    // reCAPTCHA v3 (invisible): ambil token sebelum submit bila fitur aktif.
+    const recaptchaSiteKey = @json(config('services.recaptcha.site_key'));
+    let recaptchaResolved = false;
+    if (recaptchaSiteKey) {
+        orderForm.addEventListener('submit', function (event) {
+            if (recaptchaResolved) return; // token sudah didapat, lanjut submit.
+            event.preventDefault();
+            grecaptcha.ready(function () {
+                grecaptcha.execute(recaptchaSiteKey, { action: 'booking' }).then(function (token) {
+                    document.getElementById('recaptcha_token').value = token;
+                    recaptchaResolved = true;
+                    orderForm.submit();
+                });
+            });
+        });
+    }
 </script>
 @endpush
