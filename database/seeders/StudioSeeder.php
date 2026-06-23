@@ -8,30 +8,30 @@ use Illuminate\Database\Seeder;
 class StudioSeeder extends Seeder
 {
     /**
-     * Seed data studio awal.
+     * Seed data studio sesuai data produksi terkini.
      */
     public function run(): void
     {
         $studios = [
             [
-                'name' => 'Studio Aurora',
-                'slug' => 'studio-aurora',
-                'location' => 'Lantai 1, UPFotoStudio',
-                'description' => 'Ruangan bernuansa bright untuk portrait dan keluarga.',
-                'is_active' => true,
-            ],
-            [
-                'name' => 'Studio Monochrome',
-                'slug' => 'studio-monochrome',
+                'name' => 'Studio Foto Grup',
+                'slug' => 'studio-foto-grup',
                 'location' => 'Lantai 2, UPFotoStudio',
-                'description' => 'Ruangan konsep editorial dengan lighting fleksibel.',
+                'description' => 'Ruangan luas untuk sesi foto grup, keluarga, couple, maternity, dan pre-wedding.',
                 'is_active' => true,
             ],
             [
-                'name' => 'Studio Kids',
-                'slug' => 'studio-kids',
-                'location' => 'Lantai 1, UPFotoStudio',
-                'description' => 'Ruang tematik untuk kebutuhan foto anak dan keluarga.',
+                'name' => 'Studio Foto Produk',
+                'slug' => 'studio-foto-produk',
+                'location' => 'Lantai 3, UPFotoStudio',
+                'description' => 'Ruangan profesional untuk headshot, garden look, dan branding produk.',
+                'is_active' => true,
+            ],
+            [
+                'name' => 'Pas Foto',
+                'slug' => 'pas-foto',
+                'location' => 'Lantai 2, UPFotoStudio (Ruangan terpisah)',
+                'description' => 'Ruangan khusus untuk kebutuhan pas foto dan identity photo formal.',
                 'is_active' => true,
             ],
         ];

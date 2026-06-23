@@ -9,60 +9,44 @@ use Illuminate\Database\Seeder;
 class ServicePackageSeeder extends Seeder
 {
     /**
-     * Seed paket layanan dengan harga & durasi fleksibel.
+     * Seed paket layanan sesuai data produksi terkini.
      */
     public function run(): void
     {
-        $aurora = Studio::where('slug', 'studio-aurora')->first();
-        $mono = Studio::where('slug', 'studio-monochrome')->first();
-        $kids = Studio::where('slug', 'studio-kids')->first();
+        // Map studio berdasarkan slug agar tidak bergantung pada urutan id.
+        $studioIds = Studio::query()->pluck('id', 'slug');
 
         $packages = [
-            [
-                'studio_id' => $aurora?->id,
-                'name' => 'Basic Portrait 30 Menit',
-                'description' => 'Sesi portrait singkat 30 menit.',
-                'price' => 150000,
-                'duration_minutes' => 30,
-                'is_active' => true,
-            ],
-            [
-                'studio_id' => $aurora?->id,
-                'name' => 'Premium Portrait 60 Menit',
-                'description' => 'Sesi portrait lengkap dengan 2 set background.',
-                'price' => 300000,
-                'duration_minutes' => 60,
-                'is_active' => true,
-            ],
-            [
-                'studio_id' => $mono?->id,
-                'name' => 'Editorial Session 90 Menit',
-                'description' => 'Sesi editorial untuk personal branding.',
-                'price' => 450000,
-                'duration_minutes' => 90,
-                'is_active' => true,
-            ],
-            [
-                'studio_id' => $kids?->id,
-                'name' => 'Family Kids 60 Menit',
-                'description' => 'Sesi keluarga dengan properti anak.',
-                'price' => 350000,
-                'duration_minutes' => 60,
-                'is_active' => true,
-            ],
+            ['studio' => 'studio-foto-grup', 'name' => 'Family', 'description' => 'Sesi foto keluarga dengan properti lengkap dan konsep yang hangat.', 'price' => 300000, 'duration_minutes' => 60],
+            ['studio' => 'studio-foto-grup', 'name' => 'Group', 'description' => 'Sesi foto grup hingga 15 orang, cocok untuk komunitas dan corporate.', 'price' => 450000, 'duration_minutes' => 90],
+            ['studio' => 'studio-foto-produk', 'name' => 'Headshot', 'description' => 'Sesi portrait profesional untuk kebutuhan LinkedIn, ID, dan branding personal.', 'price' => 150000, 'duration_minutes' => 30],
+            ['studio' => 'studio-foto-produk', 'name' => 'Couple', 'description' => 'Sesi foto berdua dengan berbagai konsep romantis dan modern.', 'price' => 350000, 'duration_minutes' => 60],
+            ['studio' => 'studio-foto-grup', 'name' => 'Maternity', 'description' => 'Sesi foto kehamilan yang cantik dan berkesan untuk calon ibu.', 'price' => 400000, 'duration_minutes' => 60],
+            ['studio' => 'studio-foto-produk', 'name' => 'Pre-Wedding', 'description' => 'Sesi foto pra-nikah dengan konsep elegan dan penuh cerita.', 'price' => 600000, 'duration_minutes' => 120],
+            ['studio' => 'pas-foto', 'name' => 'Pas Foto', 'description' => 'Pas foto formal untuk keperluan dokumen, CV, dan ijazah.', 'price' => 50000, 'duration_minutes' => 15],
+            ['studio' => 'studio-foto-grup', 'name' => 'Garden', 'description' => 'Sesi foto outdoor konsep taman dengan properti natural dan fresh.', 'price' => 400000, 'duration_minutes' => 60],
         ];
 
         foreach ($packages as $package) {
-            if (!$package['studio_id']) {
+            $studioId = $studioIds->get($package['studio']);
+
+            if (!$studioId) {
                 continue;
             }
 
             ServicePackage::updateOrCreate(
                 [
-                    'studio_id' => $package['studio_id'],
+                    'studio_id' => $studioId,
                     'name' => $package['name'],
                 ],
-                $package
+                [
+                    'studio_id' => $studioId,
+                    'name' => $package['name'],
+                    'description' => $package['description'],
+                    'price' => $package['price'],
+                    'duration_minutes' => $package['duration_minutes'],
+                    'is_active' => true,
+                ]
             );
         }
     }
