@@ -147,7 +147,18 @@ class BookingController extends Controller
                 : $existingNotes . ' | ' . implode(' | ', $extraNotes);
         }
 
-        $result = $bookingService->createBooking($data);
+        try {
+            $result = $bookingService->createBooking($data);
+        } catch (\RuntimeException $e) {
+            // Kegagalan gateway pembayaran (mis. channel nonaktif/Tripay down).
+            // Booking sudah ter-rollback di dalam transaksi, jadi tidak ada data sampah.
+            report($e);
+
+            return redirect()
+                ->back()
+                ->withInput()
+                ->with('error', 'Maaf, pembayaran sedang tidak tersedia. Silakan coba beberapa saat lagi.');
+        }
 
         /** @var PaymentTransaction $transaction */
         $transaction = $result['transaction'];
@@ -192,6 +203,13 @@ class BookingController extends Controller
             return redirect()
                 ->route('frontend.booking.status', $invoiceNumber)
                 ->with('error', $e->validator->errors()->first());
+        } catch (\RuntimeException $e) {
+            // Kegagalan gateway pembayaran saat membuat ulang QR.
+            report($e);
+
+            return redirect()
+                ->route('frontend.booking.status', $invoiceNumber)
+                ->with('error', 'Maaf, pembayaran sedang tidak tersedia. Silakan coba beberapa saat lagi.');
         }
 
         /** @var PaymentTransaction $newTransaction */
