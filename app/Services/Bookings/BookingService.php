@@ -203,6 +203,135 @@ class BookingService
     }
 
     /**
+     * Buat ulang QR/pembayaran untuk transaksi yang kadaluarsa atau gagal.
+     *
+     * Memakai ulang baris transaksi yang sama (invoice baru, status PENDING)
+     * agar tetap satu transaksi per booking. Slot & jadwal divalidasi ulang
+     * supaya tidak menabrak booking lain yang sudah mengambil slot tersebut.
+     *
+     * @return array{transaction: PaymentTransaction, payment_url: string|null}
+     */
+    public function regeneratePayment(PaymentTransaction $transaction): array
+    {
+        return DB::transaction(function () use ($transaction) {
+            $locked = PaymentTransaction::query()
+                ->whereKey($transaction->id)
+                ->lockForUpdate()
+                ->first();
+
+            if (!$locked) {
+                throw ValidationException::withMessages([
+                    'payment' => 'Transaksi tidak ditemukan.',
+                ]);
+            }
+
+            if ($locked->status === PaymentTransaction::STATUS_SUCCESS) {
+                throw ValidationException::withMessages([
+                    'payment' => 'Pembayaran sudah berhasil, tidak perlu membuat QR baru.',
+                ]);
+            }
+
+            // Hanya boleh regenerate bila sudah kadaluarsa/gagal. Bila masih
+            // PENDING dan belum lewat masa berlaku, arahkan ke QR yang ada.
+            $isReusable = in_array($locked->status, [
+                PaymentTransaction::STATUS_EXPIRED,
+                PaymentTransaction::STATUS_FAILED,
+            ], true);
+
+            $stillActive = $locked->status === PaymentTransaction::STATUS_PENDING
+                && ($locked->expires_at === null || $locked->expires_at->isFuture());
+
+            if (!$isReusable && $stillActive) {
+                throw ValidationException::withMessages([
+                    'payment' => 'Pembayaran masih aktif. Silakan selesaikan QR yang masih berlaku.',
+                ]);
+            }
+
+            $booking = $locked->booking()->lockForUpdate()->first();
+
+            if (!$booking) {
+                throw ValidationException::withMessages([
+                    'payment' => 'Booking terkait tidak ditemukan.',
+                ]);
+            }
+
+            $startAt = Carbon::parse($booking->booking_date->toDateString() . ' ' . $booking->start_time);
+
+            if ($startAt->lte(now())) {
+                throw ValidationException::withMessages([
+                    'payment' => 'Jadwal booking ini sudah lewat. Silakan buat booking baru dengan jadwal lain.',
+                ]);
+            }
+
+            // Pastikan slot belum diambil booking lain (selain booking ini).
+            $hasOverlap = Booking::query()
+                ->where('studio_id', $booking->studio_id)
+                ->whereKeyNot($booking->id)
+                ->whereDate('booking_date', $booking->booking_date->toDateString())
+                ->whereIn('status', [Booking::STATUS_PENDING_PAYMENT, Booking::STATUS_CONFIRMED])
+                ->where(function ($query) use ($booking) {
+                    $query->where('start_time', '<', $booking->end_time)
+                        ->where('end_time', '>', $booking->start_time);
+                })
+                ->lockForUpdate()
+                ->exists();
+
+            if ($hasOverlap) {
+                throw ValidationException::withMessages([
+                    'payment' => 'Slot jadwal ini sudah dipesan orang lain. Silakan buat booking baru dengan jadwal lain.',
+                ]);
+            }
+
+            // Hidupkan kembali booking (sebelumnya CANCELLED saat auto-release).
+            $booking->update(['status' => Booking::STATUS_PENDING_PAYMENT]);
+
+            // Invoice baru wajib: order_id Midtrans harus unik per transaksi Snap.
+            $invoiceNumber = $this->generateInvoiceNumber();
+
+            $locked->update([
+                'invoice_number' => $invoiceNumber,
+                'status' => PaymentTransaction::STATUS_PENDING,
+                'qr_payload' => null,
+                'gateway_reference' => null,
+                'paid_at' => null,
+                'expires_at' => null,
+                'callback_payload' => null,
+            ]);
+
+            $guest = $booking->guest;
+
+            $gatewayResponse = $this->paymentGateway->createQrisPayment([
+                'invoice_number' => $invoiceNumber,
+                'amount' => (int) $locked->amount,
+                'customer_name' => $guest?->full_name,
+                'customer_email' => $guest?->email,
+                'customer_phone' => $guest?->phone,
+                'booking_code' => $booking->booking_code,
+            ]);
+
+            $locked->update([
+                'gateway_reference' => $gatewayResponse['reference'] ?? null,
+                'qr_payload' => $gatewayResponse['qr_string'] ?? null,
+                'expires_at' => $gatewayResponse['expires_at'] ?? now()->addMinutes(30),
+            ]);
+
+            $paymentUrl = is_string($gatewayResponse['payment_url'] ?? null)
+                ? $gatewayResponse['payment_url']
+                : null;
+
+            $this->sendPendingEmail(
+                $locked->fresh(['booking.guest', 'booking.studio', 'booking.servicePackage']),
+                $paymentUrl ?: route('frontend.booking.status', $invoiceNumber)
+            );
+
+            return [
+                'transaction' => $locked->fresh(),
+                'payment_url' => $paymentUrl,
+            ];
+        });
+    }
+
+    /**
      * Kirim email instruksi pembayaran ke tamu, setelah transaksi commit.
      * Kegagalan email di-log dan tidak mengganggu proses booking.
      */

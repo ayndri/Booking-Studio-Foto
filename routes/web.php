@@ -41,6 +41,9 @@ Route::post('/booking', [BookingController::class, 'store'])
     ->middleware('throttle:5,1')
     ->name('frontend.booking.store');
 Route::get('/booking/status/{invoiceNumber}', [BookingController::class, 'status'])->name('frontend.booking.status');
+Route::post('/booking/status/{invoiceNumber}/bayar-ulang', [BookingController::class, 'repay'])
+    ->middleware('throttle:5,1')
+    ->name('frontend.booking.repay');
 Route::get('/booking/invoice/{invoiceNumber}', [BookingController::class, 'invoice'])->name('frontend.booking.invoice');
 Route::get('/booking/studios/{studio}/packages', [BookingController::class, 'packagesByStudio'])
     ->name('frontend.booking.packages-by-studio');

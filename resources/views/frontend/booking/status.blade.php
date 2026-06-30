@@ -169,6 +169,18 @@
 
     <div class="bkc" style="padding:32px 0 72px;">
 
+        @if(session('error'))
+            <div class="bk-card mb-4" style="border-color:rgba(220,38,38,.3);">
+                <div class="bk-pad" style="color:#991b1b;font-size:.88rem;">⚠️ {{ session('error') }}</div>
+            </div>
+        @endif
+
+        @if(session('success'))
+            <div class="bk-card mb-4" style="border-color:rgba(22,101,52,.3);">
+                <div class="bk-pad" style="color:#166534;font-size:.88rem;">✅ {{ session('success') }}</div>
+            </div>
+        @endif
+
         {{-- Status Banner --}}
         <div class="bk-card mb-4 {{ $si['cls'] }}">
             <div class="bk-pad st-banner">
@@ -252,7 +264,27 @@
             {{-- RIGHT: QR + mock --}}
             <div class="col-lg-5">
 
-                @if(request('gateway') === 'mock' || $transaction->qr_payload)
+                @if(in_array($txStatus, ['expired', 'failed']))
+                    <div class="bk-card mb-3" style="border-color:rgba(217,119,6,.25);">
+                        <div class="bk-pad" style="text-align:center;padding:24px;">
+                            <div style="font-size:2rem;margin-bottom:8px;">{{ $txStatus === 'expired' ? '⌛' : '❌' }}</div>
+                            <h3 style="font-size:1rem;margin-bottom:6px;">
+                                {{ $txStatus === 'expired' ? 'Waktu Pembayaran Habis' : 'Pembayaran Gagal' }}
+                            </h3>
+                            <p style="font-size:.84rem;color:var(--ks);margin-bottom:16px;">
+                                Buat ulang QR untuk melanjutkan pembayaran. Jadwal akan dicek ulang ketersediaannya.
+                            </p>
+                            <form method="POST" action="{{ route('frontend.booking.repay', $transaction->invoice_number) }}">
+                                @csrf
+                                <button type="submit" class="bk-dl-btn" style="border:none;cursor:pointer;">
+                                    🔄 Buat QR Baru &amp; Bayar
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                @endif
+
+                @if($txStatus !== 'expired' && $txStatus !== 'failed' && (request('gateway') === 'mock' || $transaction->qr_payload))
                     <div class="bk-card mb-3">
                         <div class="bk-pad">
                             <h3 style="font-size:1rem;margin-bottom:12px;">QRIS Payload</h3>

@@ -15,6 +15,7 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
+use Illuminate\Validation\ValidationException;
 use Illuminate\View\View;
 
 class BookingController extends Controller
@@ -174,6 +175,36 @@ class BookingController extends Controller
         return view('frontend.booking.status', [
             'transaction' => $transaction,
         ]);
+    }
+
+    /**
+     * Buat ulang QR/pembayaran untuk transaksi kadaluarsa atau gagal.
+     */
+    public function repay(string $invoiceNumber, BookingService $bookingService): RedirectResponse
+    {
+        $transaction = PaymentTransaction::query()
+            ->where('invoice_number', $invoiceNumber)
+            ->firstOrFail();
+
+        try {
+            $result = $bookingService->regeneratePayment($transaction);
+        } catch (ValidationException $e) {
+            return redirect()
+                ->route('frontend.booking.status', $invoiceNumber)
+                ->with('error', $e->validator->errors()->first());
+        }
+
+        /** @var PaymentTransaction $newTransaction */
+        $newTransaction = $result['transaction'];
+
+        $paymentUrl = $this->resolvePaymentUrl(
+            $result['payment_url'] ?? null,
+            $newTransaction->invoice_number
+        );
+
+        return redirect()
+            ->to($paymentUrl)
+            ->with('success', 'QR pembayaran baru berhasil dibuat. Silakan selesaikan pembayaran QRIS.');
     }
 
     /**
