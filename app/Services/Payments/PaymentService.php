@@ -96,6 +96,67 @@ class PaymentService
     }
 
     /**
+     * Memproses callback webhook dari Tripay (server-to-server).
+     * Signature (HMAC-SHA256 atas raw body) wajib valid agar tidak bisa dipalsukan.
+     */
+    public function processTripayCallback(string $rawBody, string $signature): PaymentTransaction
+    {
+        if (!$this->isValidTripaySignature($rawBody, $signature)) {
+            throw ValidationException::withMessages([
+                'signature' => 'Signature Tripay tidak valid.',
+            ]);
+        }
+
+        $payload = json_decode($rawBody, true);
+
+        if (!is_array($payload)) {
+            throw ValidationException::withMessages([
+                'payload' => 'Payload Tripay tidak valid.',
+            ]);
+        }
+
+        return $this->applyTripayStatus($payload);
+    }
+
+    /**
+     * Terapkan payload Tripay (dari webhook atau Transaction Detail API) ke transaksi.
+     * Dicocokkan via merchant_ref (= invoice_number internal).
+     *
+     * @param array<string, mixed> $payload
+     */
+    public function applyTripayStatus(array $payload): PaymentTransaction
+    {
+        return DB::transaction(function () use ($payload) {
+            $merchantRef = (string) ($payload['merchant_ref'] ?? '');
+
+            if ($merchantRef === '') {
+                throw ValidationException::withMessages([
+                    'merchant_ref' => 'merchant_ref wajib ada pada notifikasi Tripay.',
+                ]);
+            }
+
+            $transaction = $this->lockTransaction($merchantRef);
+
+            if (!$transaction) {
+                throw ValidationException::withMessages([
+                    'merchant_ref' => 'Invoice tidak ditemukan untuk merchant_ref ini.',
+                ]);
+            }
+
+            $mappedStatus = $this->mapTripayStatus((string) ($payload['status'] ?? ''));
+
+            // Status masih UNPAID (menunggu pembayaran) — simpan payload saja.
+            if ($mappedStatus === null) {
+                $transaction->update(['callback_payload' => $payload]);
+
+                return $transaction->fresh(['booking']);
+            }
+
+            return $this->applyStatus($transaction, $mappedStatus, $payload);
+        });
+    }
+
+    /**
      * Terapkan perubahan status pada transaksi + booking secara idempotent.
      *
      * @param array<string, mixed> $payload
@@ -220,6 +281,36 @@ class PaymentService
             'deny', 'cancel', 'failure', 'refund', 'partial_refund' => PaymentTransaction::STATUS_FAILED,
             'expire' => PaymentTransaction::STATUS_EXPIRED,
             default => null, // pending / authorize
+        };
+    }
+
+    /**
+     * Verifikasi signature webhook Tripay: HMAC-SHA256(raw_body, private_key).
+     */
+    private function isValidTripaySignature(string $rawBody, string $signature): bool
+    {
+        $privateKey = (string) config('services.tripay.private_key');
+
+        if ($privateKey === '' || $signature === '') {
+            return false;
+        }
+
+        $expected = hash_hmac('sha256', $rawBody, $privateKey);
+
+        return hash_equals($expected, $signature);
+    }
+
+    /**
+     * Petakan status Tripay ke status internal aplikasi.
+     * Mengembalikan null bila pembayaran masih berlangsung (UNPAID).
+     */
+    private function mapTripayStatus(string $status): ?string
+    {
+        return match (strtoupper($status)) {
+            'PAID' => PaymentTransaction::STATUS_SUCCESS,
+            'EXPIRED' => PaymentTransaction::STATUS_EXPIRED,
+            'FAILED', 'REFUND' => PaymentTransaction::STATUS_FAILED,
+            default => null, // UNPAID
         };
     }
 }

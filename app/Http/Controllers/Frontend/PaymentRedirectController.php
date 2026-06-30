@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Frontend;
 use App\Http\Controllers\Controller;
 use App\Services\Payments\MidtransSnapGateway;
 use App\Services\Payments\PaymentService;
+use App\Services\Payments\TripayGateway;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Validation\ValidationException;
@@ -60,6 +61,38 @@ class PaymentRedirectController extends Controller
 
         return redirect()->route('frontend.booking.status', $invoiceNumber)
             ->with('error', 'Pembayaran gagal. Silakan coba lagi.');
+    }
+
+    /**
+     * Return URL Tripay — customer kembali setelah halaman pembayaran Tripay.
+     * Sinkronkan status dari Tripay lalu tampilkan halaman status booking.
+     */
+    public function tripayFinish(Request $request): RedirectResponse
+    {
+        $reference = trim((string) $request->query('tripay_reference'));
+        $merchantRef = trim((string) $request->query('tripay_merchant_ref'));
+
+        if (config('services.payment_gateway') === 'tripay' && $reference !== '') {
+            try {
+                $detail = app(TripayGateway::class)->getStatus($reference);
+
+                if (!empty($detail['merchant_ref'])) {
+                    $this->paymentService->applyTripayStatus($detail);
+                    $merchantRef = (string) $detail['merchant_ref'];
+                }
+            } catch (ValidationException) {
+                // Invoice/status tidak valid — abaikan, halaman status tetap ditampilkan.
+            } catch (\Throwable) {
+                // Jaringan/Tripay down — biarkan webhook yang menyusul memperbarui status.
+            }
+        }
+
+        if ($merchantRef === '') {
+            return redirect()->route('frontend.home')
+                ->with('error', 'Transaksi tidak ditemukan.');
+        }
+
+        return redirect()->route('frontend.booking.status', $merchantRef);
     }
 
     /**

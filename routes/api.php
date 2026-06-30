@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Api\MidtransNotificationController;
 use App\Http\Controllers\Api\PaymentCallbackController;
+use App\Http\Controllers\Api\TripayCallbackController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -16,3 +17,7 @@ Route::post('/payments/qris/callback', [PaymentCallbackController::class, 'handl
 // Webhook (HTTP Notification) dari Midtrans — dipasang di dashboard Midtrans.
 Route::post('/payments/midtrans/notification', [MidtransNotificationController::class, 'handle'])
     ->name('api.payments.midtrans.notification');
+
+// Webhook (Callback URL) dari Tripay — dipasang di dashboard Tripay.
+Route::post('/payments/tripay/callback', [TripayCallbackController::class, 'handle'])
+    ->name('api.payments.tripay.callback');

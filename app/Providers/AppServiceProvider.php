@@ -6,6 +6,7 @@ use App\Contracts\Payments\PaymentGatewayInterface;
 use App\Models\WebsiteContent;
 use App\Services\Payments\MidtransSnapGateway;
 use App\Services\Payments\MockQrisGateway;
+use App\Services\Payments\TripayGateway;
 use Illuminate\Pagination\Paginator;
 use Illuminate\Support\Facades\View;
 use Illuminate\Support\ServiceProvider;
@@ -26,11 +27,25 @@ class AppServiceProvider extends ServiceProvider
             );
         });
 
+        // Gateway Tripay di-resolve dari config (dipakai juga oleh finish redirect).
+        $this->app->singleton(TripayGateway::class, function () {
+            return new TripayGateway(
+                apiKey: (string) config('services.tripay.api_key'),
+                privateKey: (string) config('services.tripay.private_key'),
+                merchantCode: (string) config('services.tripay.merchant_code'),
+                isProduction: (bool) config('services.tripay.is_production'),
+                expiryMinutes: (int) config('services.tripay.expiry_minutes', 30),
+                qrisMethod: (string) config('services.tripay.qris_method', 'QRIS'),
+            );
+        });
+
         // Abstraksi gateway pembayaran agar implementasi mudah diganti via PAYMENT_GATEWAY.
         $this->app->bind(PaymentGatewayInterface::class, function ($app) {
-            return config('services.payment_gateway') === 'midtrans'
-                ? $app->make(MidtransSnapGateway::class)
-                : $app->make(MockQrisGateway::class);
+            return match (config('services.payment_gateway')) {
+                'midtrans' => $app->make(MidtransSnapGateway::class),
+                'tripay' => $app->make(TripayGateway::class),
+                default => $app->make(MockQrisGateway::class),
+            };
         });
     }
 

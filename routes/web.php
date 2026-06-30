@@ -57,6 +57,9 @@ Route::get('/payment/finish', [PaymentRedirectController::class, 'finish'])->nam
 Route::get('/payment/unfinish', [PaymentRedirectController::class, 'unfinish'])->name('payment.unfinish');
 Route::get('/payment/error', [PaymentRedirectController::class, 'error'])->name('payment.error');
 
+// Return URL setelah pembayaran Tripay.
+Route::get('/payment/tripay/finish', [PaymentRedirectController::class, 'tripayFinish'])->name('payment.tripay.finish');
+
 /*
 |--------------------------------------------------------------------------
 | Authentication Routes

@@ -33,10 +33,11 @@ return [
 
     /*
     |--------------------------------------------------------------------------
-    | Payment Gateway (Midtrans)
+    | Payment Gateway
     |--------------------------------------------------------------------------
     | PAYMENT_GATEWAY=mock     -> pakai MockQrisGateway (simulasi, tanpa internet)
     | PAYMENT_GATEWAY=midtrans -> pakai Midtrans Snap (sandbox/production)
+    | PAYMENT_GATEWAY=tripay   -> pakai Tripay (QRIS, sandbox/production)
     */
     'payment_gateway' => env('PAYMENT_GATEWAY', 'mock'),
 
@@ -48,6 +49,18 @@ return [
         'is_production' => (bool) env('MIDTRANS_IS_PRODUCTION', false),
         // Masa berlaku pembayaran sebelum kadaluarsa (menit).
         'expiry_minutes' => (int) env('MIDTRANS_EXPIRY_MINUTES', 30),
+    ],
+
+    'tripay' => [
+        'api_key' => env('TRIPAY_API_KEY'),
+        'private_key' => env('TRIPAY_PRIVATE_KEY'),
+        'merchant_code' => env('TRIPAY_MERCHANT_CODE'),
+        // false = sandbox (development), true = production.
+        'is_production' => (bool) env('TRIPAY_IS_PRODUCTION', false),
+        // Kode channel pembayaran Tripay. QRIS default; ganti bila perlu (mis. QRISC).
+        'qris_method' => env('TRIPAY_QRIS_METHOD', 'QRIS'),
+        // Masa berlaku pembayaran sebelum kadaluarsa (menit).
+        'expiry_minutes' => (int) env('TRIPAY_EXPIRY_MINUTES', 30),
     ],
 
     /*
