@@ -104,7 +104,7 @@
 .pkg-img {
     position: relative;
     overflow: hidden;
-    aspect-ratio: 16/9;
+    aspect-ratio: 4/3;
     background: #d8d5cf;
     flex-shrink: 0;
 }
