@@ -164,11 +164,11 @@
 }
 .intro-img {
     border-radius: 18px; overflow: hidden;
-    background: #d8d5cf;
+    aspect-ratio: 4/5; background: #d8d5cf;
     box-shadow: 0 18px 44px rgba(0,0,0,.1);
 }
 .intro-img img {
-    width: 100%; height: auto; display: block;
+    width: 100%; height: 100%; object-fit: cover; object-position: top center; display: block;
     transition: transform 600ms ease;
 }
 .intro-img:hover img { transform: scale(1.04); }
