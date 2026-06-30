@@ -31,7 +31,7 @@
 .bk-pad{padding:20px 22px;}
 
 /* pkg info */
-.bk-pkg-img{width:100%;aspect-ratio:4/3;object-fit:cover;display:block;background:#d8d5cf;}
+.bk-pkg-img{width:100%;aspect-ratio:3/4;object-fit:contain;display:block;background:#f4f3f0;}
 .bk-studio-badge{display:inline-block;background:var(--gp);color:var(--g);border-radius:999px;padding:4px 12px;font-size:.65rem;font-weight:600;letter-spacing:.08em;text-transform:uppercase;margin-bottom:10px;}
 .bk-pkg-name{font-size:clamp(1.1rem,1.7vw,1.55rem);font-weight:700;color:var(--k);margin-bottom:14px;line-height:1.2;}
 .bk-perks{list-style:none;padding:0;margin:0;}

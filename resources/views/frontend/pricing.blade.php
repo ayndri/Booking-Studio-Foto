@@ -100,27 +100,6 @@
     border-color: rgba(47,84,67,.22);
 }
 
-/* card image */
-.pkg-img {
-    position: relative;
-    overflow: hidden;
-    aspect-ratio: 4/3;
-    background: #d8d5cf;
-    flex-shrink: 0;
-}
-.pkg-img img {
-    width: 100%; height: 100%;
-    object-fit: cover; display: block;
-    transition: transform 500ms ease;
-}
-.pkg-card:hover .pkg-img img { transform: scale(1.06); }
-.pkg-img-overlay {
-    position: absolute; inset: 0;
-    background: linear-gradient(to top, rgba(17,17,17,.6) 0%, transparent 50%);
-    opacity: 0; transition: opacity 260ms ease;
-}
-.pkg-card:hover .pkg-img-overlay { opacity: 1; }
-
 /* card body */
 .pkg-body {
     padding: 20px 22px;
@@ -261,12 +240,6 @@
 
                 <div class="col-md-6 col-xl-3 d-flex">
                     <div class="pkg-card w-100">
-
-                        {{-- image --}}
-                        <div class="pkg-img">
-                            <img src="{{ $package->image_url }}" alt="{{ $package->name }}" loading="lazy">
-                            <div class="pkg-img-overlay"></div>
-                        </div>
 
                         {{-- body --}}
                         <div class="pkg-body">
