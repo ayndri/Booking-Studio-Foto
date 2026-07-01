@@ -7,6 +7,7 @@ use App\Http\Requests\Backend\Admin\ServicePackageRequest;
 use App\Models\ServicePackage;
 use App\Models\Studio;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\View\View;
 
@@ -15,10 +16,34 @@ class ServicePackageController extends Controller
     /**
      * Daftar paket layanan.
      */
-    public function index(): View
+    public function index(Request $request): View
     {
+        $search = trim((string) $request->query('search', ''));
+        $sort = (string) $request->query('sort', 'created_at');
+        $dir = strtolower((string) $request->query('dir', 'desc')) === 'asc' ? 'asc' : 'desc';
+
+        // Kolom yang boleh dipakai untuk sort (whitelist, anti SQL injection).
+        $sortable = ['name', 'duration_minutes', 'price', 'is_active', 'created_at'];
+        if (!in_array($sort, $sortable, true)) {
+            $sort = 'created_at';
+        }
+
+        $query = ServicePackage::query()->with('studio');
+
+        if ($search !== '') {
+            $query->where(function ($q) use ($search) {
+                $q->where('name', 'like', "%{$search}%")
+                    ->orWhereHas('studio', fn ($studio) => $studio->where('name', 'like', "%{$search}%"));
+            });
+        }
+
+        $query->orderBy($sort, $dir);
+
         return view('backend.admin.service_packages.index', [
-            'packages' => ServicePackage::query()->with('studio')->latest()->paginate(10),
+            'packages' => $query->paginate(10)->withQueryString(),
+            'search' => $search,
+            'sort' => $sort,
+            'dir' => $dir,
         ]);
     }
 

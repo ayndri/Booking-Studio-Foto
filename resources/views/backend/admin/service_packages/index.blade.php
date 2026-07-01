@@ -2,10 +2,44 @@
 @section('title', 'Paket Layanan - Admin')
 
 @section('content')
+@php
+    // Bangun URL sort: toggle arah bila kolom aktif, reset ke halaman 1.
+    $sortLink = function ($col) use ($sort, $dir) {
+        $newDir = ($sort === $col && $dir === 'asc') ? 'desc' : 'asc';
+        return request()->fullUrlWithQuery(['sort' => $col, 'dir' => $newDir, 'page' => null]);
+    };
+    $arrow = fn ($col) => $sort === $col ? ($dir === 'asc' ? ' ▲' : ' ▼') : '';
+@endphp
+
+@push('styles')
+<style>
+    .th-sort a { color: inherit; text-decoration: none; display: inline-flex; align-items: center; gap: 2px; }
+    .th-sort a:hover { color: #2f5443; }
+    .search-bar { display: flex; gap: 8px; align-items: center; margin-bottom: 16px; flex-wrap: wrap; }
+    .search-bar input[type=text] {
+        padding: 8px 12px; border: 1px solid rgba(0,0,0,.15); border-radius: 8px;
+        font-size: .88rem; min-width: 260px; outline: none;
+    }
+    .search-bar input[type=text]:focus { border-color: #2f5443; }
+    .search-bar .btn-reset { font-size: .82rem; color: #888; text-decoration: none; }
+    .search-bar .btn-reset:hover { color: #dc2626; }
+</style>
+@endpush
+
 <div class="page-header">
     <h1 class="page-title">📦 Paket Layanan</h1>
     <a href="{{ route('admin.service-packages.create') }}" class="btn-g">+ Tambah Paket</a>
 </div>
+
+<form method="GET" class="search-bar">
+    <input type="text" name="search" value="{{ $search }}" placeholder="Cari nama paket atau studio...">
+    <input type="hidden" name="sort" value="{{ $sort }}">
+    <input type="hidden" name="dir" value="{{ $dir }}">
+    <button type="submit" class="btn-g">Cari</button>
+    @if($search !== '')
+        <a href="{{ route('admin.service-packages.index') }}" class="btn-reset">✕ Reset</a>
+    @endif
+</form>
 
 <div class="d-card">
     <div class="table-responsive">
@@ -14,10 +48,10 @@
                 <tr>
                     <th>Studio</th>
                     <th>Foto</th>
-                    <th>Nama Paket</th>
-                    <th>Durasi</th>
-                    <th>Harga</th>
-                    <th>Status</th>
+                    <th class="th-sort"><a href="{{ $sortLink('name') }}">Nama Paket{{ $arrow('name') }}</a></th>
+                    <th class="th-sort"><a href="{{ $sortLink('duration_minutes') }}">Durasi{{ $arrow('duration_minutes') }}</a></th>
+                    <th class="th-sort"><a href="{{ $sortLink('price') }}">Harga{{ $arrow('price') }}</a></th>
+                    <th class="th-sort"><a href="{{ $sortLink('is_active') }}">Status{{ $arrow('is_active') }}</a></th>
                     <th width="160">Aksi</th>
                 </tr>
             </thead>
@@ -54,7 +88,9 @@
                     </td>
                 </tr>
             @empty
-                <tr><td colspan="7" style="text-align:center;color:#bbb;padding:32px">Belum ada paket layanan.</td></tr>
+                <tr><td colspan="7" style="text-align:center;color:#bbb;padding:32px">
+                    {{ $search !== '' ? 'Tidak ada paket yang cocok dengan pencarian.' : 'Belum ada paket layanan.' }}
+                </td></tr>
             @endforelse
             </tbody>
         </table>
